@@ -163,12 +163,19 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     conv.append_message(conv.roles[0], user_prompt)
     conv.append_message(conv.roles[1], None)
 
-    if model in OPENAI_MODEL_LIST:
-        judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
-    elif model in ANTHROPIC_MODEL_LIST:
-        judgment = chat_completion_anthropic(model, conv, temperature=0, max_tokens=1024)
+    if "openai" in model:
+        model_name = model.split("openai/")[1]
+    elif "anthropic" in model:
+        model_name = model.split("anthropic/")[1]
     else:
-        raise ValueError(f"Invalid judge model name: {model}")
+        model_name = model
+
+    if model_name in OPENAI_MODEL_LIST:
+        judgment = chat_completion_openai(model_name, conv, temperature=0, max_tokens=2048)
+    elif model_name in ANTHROPIC_MODEL_LIST:
+        judgment = chat_completion_anthropic(model_name, conv, temperature=0, max_tokens=1024)
+    else:
+        raise ValueError(f"Invalid judge model name: {model_name}")
 
     if judge.prompt_template["output_format"] == "[[rating]]":
         match = re.search(one_score_pattern, judgment)
@@ -259,17 +266,24 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
     conv = get_conversation_template(model)
     conv.append_message(conv.roles[0], user_prompt)
     conv.append_message(conv.roles[1], None)
+    
+    if "openai" in model:
+        model_name = model.split("openai/")[1]
+    elif "anthropic" in model:
+        model_name = model.split("anthropic/")[1]
+    else:
+        model_name = model
 
-    if model in OPENAI_MODEL_LIST:
+    if model_name in OPENAI_MODEL_LIST:
         conv.set_system_message(system_prompt)
         judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
-    elif model in ANTHROPIC_MODEL_LIST:
+    elif model_name in ANTHROPIC_MODEL_LIST:
         if system_prompt != "You are a helpful assistant.":
             user_prompt = "[Instruction]\n" + system_prompt + "\n\n" + user_prompt
             conv.messages[0][1] = user_prompt
         judgment = chat_completion_anthropic(model, conv, temperature=0, max_tokens=1024)
     else:
-        raise ValueError(f"Invalid judge model name: {model}")
+        raise ValueError(f"Invalid judge model name: {model_name}")
 
     if judge.prompt_template["output_format"] == "[[A]]":
         if "[[A]]" in judgment:
@@ -391,6 +405,7 @@ def play_a_match_pair(match: MatchPair, output_file: str):
 
 
 def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
+    openai.api_base = "https://openrouter.ai/api/v1"
     if api_dict is not None:
         openai.api_base = api_dict["api_base"]
         openai.api_key = api_dict["api_key"]

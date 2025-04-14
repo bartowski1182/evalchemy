@@ -326,7 +326,7 @@ class MixEvalBenchmark(BaseBenchmark):
     def _get_score_file(self) -> str:
         score_dir = os.path.join(self.args.output_dir, self.args.model_name, self.args.benchmark, self.args.version)
         judge_model = self._get_judge_model_name()
-        return os.path.join(score_dir, f"score_{judge_model}.json")
+        return os.path.join(score_dir, f"score_{judge_model.replace('/', '_')}.json")
 
     def _get_judge_model_name(self) -> str:
         return (

@@ -15,6 +15,8 @@ from .testing_utils import get_multiple_choice_answer
 PROMPT = """Return your final response within \\boxed{{}} and only include the letter choice (A, B, C, or D) as your final response.
 Problem: {problem}
 Options: {options}
+
+Ensure that the end of your response is a letter enclosed in \\boxed{{}} so that your answer can be properly graded.
 Answer:"""
 
 
@@ -67,7 +69,10 @@ class GPQADiamondBenchmark(BaseBenchmark):
         elif isinstance(model, lm_eval.models.openai_completions.OpenAIChatCompletion):
             model_name = str(f"openai/{model.model}")
         else:
-            model_name = model.model_args["model"]
+            try:
+                model_name = model.model_args["model"]
+            except Exception:
+                model_name = ""
 
         all_outputs = []
 

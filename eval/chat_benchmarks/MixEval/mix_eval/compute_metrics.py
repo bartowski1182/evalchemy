@@ -125,7 +125,7 @@ def compute_metric_closeended_freeform_modelparse_from_judgefile(args):
             model,
             args.benchmark,
             args.version,
-            f"judge_results_ff_model_judge_{args.freeform_judge}.jsonl",
+            f"judge_results_ff_model_judge_{args.freeform_judge.replace('/', '_')}.jsonl",
         )
         if not os.path.exists(judge_file):
             print(f"Judge file not found: {judge_file}")
@@ -226,7 +226,7 @@ def compute_metric_closeended_multichoice_modelparse_from_judgefile(args):
             model,
             args.benchmark,
             args.version,
-            f"judge_results_mp_model_judge_{args.multichoice_judge}.jsonl",
+            f"judge_results_mp_model_judge_{args.multichoice_judge.replace('/', '_')}.jsonl",
         )
         if not os.path.exists(judge_file):
             print(f"Judge file not found: {judge_file}")
@@ -376,7 +376,7 @@ def compute_metric_closeended_freeform_modelparse(args):
                 model,
                 args.benchmark,
                 args.version,
-                f"judge_results_ff_model_judge_{args.freeform_judge}.jsonl",
+                f"judge_results_ff_model_judge_{args.freeform_judge.replace('/', '_')}.jsonl",
             ),
             "w",
         ) as f:
@@ -569,7 +569,7 @@ def compute_metric_closeended_multichoice_modelparse(args):
                 model,
                 args.benchmark,
                 args.version,
-                f"judge_results_mp_model_judge_{args.multichoice_judge}.jsonl",
+                f"judge_results_mp_model_judge_{args.multichoice_judge.replace('/', '_')}.jsonl",
             ),
             "w",
         ) as f:
@@ -731,9 +731,9 @@ def compute_metric(args):
 
         score_dict[model] = tmp_score_dict_model
         if args.multichoice_judge == args.freeform_judge:
-            scorer = args.multichoice_judge
+            scorer = args.multichoice_judge.replace('/', '_')
         else:
-            scorer = f"mc{args.multichoice_judge}_ff{args.freeform_judge}"
+            scorer = f"mc{args.multichoice_judge.replace('/', '_')}_ff{args.freeform_judge.replace('/', '_')}"
         with open(os.path.join(score_dir, f"score_{scorer}.json"), "w") as f:
             f.write(json.dumps(tmp_score_dict_model, indent=4) + "\n")
         print_table(tmp_score_dict_model)

@@ -117,43 +117,49 @@ class MTBenchBenchmark(BaseBenchmark):
         # Process each turn
         for turn_num in range(max_turns):
             self.logger.info(f"Processing Turn {turn_num + 1}")
-            batch_instances = []
 
             # Prepare instances for current turn
             self.logger.info("Generating responses for MTBench...")
+            batches_by_category = {}
             for q_idx, question in enumerate(questions):
                 if turn_num < len(question["turns"]):
-                    temperature = temperature_config.get(question["category"], 0.7)
+                    category = question["category"]
+                    temperature = temperature_config.get(category, 0.7)
 
                     # Add user message to conversation
                     all_convs[q_idx].append({"role": "user", "content": question["turns"][turn_num]})
 
                     # Prepare model input
                     prompt = self._prepare_messages(all_convs[q_idx], model)
-                    batch_instances.append(
-                        Instance(
-                            "generate_until",
-                            all_convs[q_idx],
-                            (
-                                prompt,
-                                {
-                                    "max_gen_toks": self.config.max_new_token,
-                                    "do_sample": temperature >= 1e-4,
-                                    "temperature": temperature,
-                                },
-                            ),
-                            q_idx,
-                        )
+                    instance = Instance(
+                        "generate_until",
+                        all_convs[q_idx],
+                        (
+                            prompt,
+                            {
+                                "max_gen_toks": self.config.max_new_token,
+                                "do_sample": temperature >= 1e-4,
+                                "temperature": temperature,
+                            },
+                        ),
+                        q_idx,
                     )
 
-            # Generate responses
-            if batch_instances:
-                outputs = self.compute(model, batch_instances)
+                    if category not in batches_by_category:
+                        batches_by_category[category] = []
+                    batches_by_category[category].append((q_idx, instance))
 
-                # Process outputs
-                for q_idx, output in enumerate(outputs):
-                    all_convs[q_idx].append({"role": "assistant", "content": output})
-                    all_choices[q_idx]["turns"].append(output)
+            self.logger.info(f"Categories: {batches_by_category.keys()}")
+            self.logger.info(f"Total batches: {sum(len(x) for x in batches_by_category.values())}")
+
+            for category, batch in batches_by_category.items():
+                if batch:
+                    self.logger.info(f"Batch for category {category}: {len(batch)}")
+                    instances = [inst for (_, inst) in batch]
+                    outputs = self.compute(model, instances)
+                    for ((q_idx, _), output) in zip(batch, outputs):
+                        all_convs[q_idx].append({"role": "assistant", "content": output})
+                        all_choices[q_idx]["turns"].append(output)
 
             if model.rank != 0:
                 continue
