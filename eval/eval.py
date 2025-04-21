@@ -418,6 +418,24 @@ def setup_evaluation_tracker(output_path: str, use_database: bool) -> DCEvaluati
     """
     return DCEvaluationTracker(output_path, use_database)
 
+def extract_pretrained_model(prefix, model_args):
+    # Find the start of "pretrained=" substring
+    start_index = model_args.find("pretrained=")
+    if start_index == -1:
+        return None  # Return None if "pretrained=" is not found
+    
+    # Move the index to the start of the actual value
+    start_index += len("pretrained=")
+    
+    # Find the next comma after "pretrained="
+    end_index = model_args.find(",", start_index)
+    if end_index == -1:
+        # If no comma is found, take the rest of the string
+        return f"{prefix}pretrained={model_args[start_index:].replace('/', '_')}"
+
+    # Return the substring between "pretrained=" and the next comma
+    return f"{prefix}pretrained={model_args[start_index:end_index].replace('/', '_')}"
+
 
 def initialize_model(
     model: Union[str, LM],
@@ -462,7 +480,7 @@ def initialize_model(
     else:
         lm = model
 
-    lm.model_identifier = sanitize_model_name(f"model_{model}_model_args_{model_args}")
+    lm.model_identifier = extract_pretrained_model(f"model_{model}_model_args_", model_args)
     return lm
 
 
