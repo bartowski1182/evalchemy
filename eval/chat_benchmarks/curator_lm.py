@@ -43,15 +43,11 @@ class CuratorAPIModel(TemplateLM):
             }
         )
 
-        if "gemini" in self.model_name and "thinking" in self.model_name:
-            max_requests_per_minute = max_requests_per_minute or 200
-            max_tokens_per_minute = max_tokens_per_minute or 400_000
-        elif "gemini" in self.model_name:
-            max_requests_per_minute = max_requests_per_minute or 2000
-            max_tokens_per_minute = max_tokens_per_minute or 4_000_000
-        elif "claude" in self.model_name:
-            max_requests_per_minute = max_requests_per_minute or 2000
-            max_tokens_per_minute = max_tokens_per_minute or 80_000
+        if "curator_url" in kwargs:
+            self.backend_params["base_url"] = kwargs["curator_url"]
+
+        if "curator_api_key" in kwargs:
+            self.backend_params["api_key"] = str(kwargs["curator_api_key"])
 
         if tokenized_requests:
             raise NotImplementedError("Tokenized requests not implemented for curator.")
@@ -72,12 +68,9 @@ class CuratorAPIModel(TemplateLM):
             "request_timeout": timeout,
             "max_retries": max_retries,
         }
-        if max_requests_per_minute is not None:
-            self.backend_params["max_requests_per_minute"] = max_requests_per_minute
-        if max_tokens_per_minute is not None:
-            self.backend_params["max_tokens_per_minute"] = max_tokens_per_minute
-        if seconds_to_pause_on_rate_limit is not None:
-            self.backend_params["seconds_to_pause_on_rate_limit"] = seconds_to_pause_on_rate_limit
+        self.backend_params["max_requests_per_minute"] = max_requests_per_minute or 50
+        self.backend_params["max_tokens_per_minute"] = max_tokens_per_minute or 100000
+        self.backend_params["seconds_to_pause_on_rate_limit"] = seconds_to_pause_on_rate_limit or 10
 
         # Disable cache since it is not necessary
         os.environ["CURATOR_DISABLE_CACHE"] = "true"
@@ -112,7 +105,7 @@ class CuratorAPIModel(TemplateLM):
             self.eos = eos
             self.gen_kwargs = gen_kwargs.copy()
             self.llm = curator.LLM(
-                model_name=self.model_name, generation_params=gen_kwargs, backend_params=self.backend_params.copy()
+                model_name=self.model_name, generation_params=gen_kwargs, backend_params=self.backend_params.copy(), backend="openai"
             )
         else:
             if self.gen_kwargs != gen_kwargs:
@@ -121,7 +114,7 @@ class CuratorAPIModel(TemplateLM):
                 )
                 self.gen_kwargs = gen_kwargs.copy()
                 self.llm = curator.LLM(
-                    model_name=self.model_name, generation_params=gen_kwargs, backend_params=self.backend_params.copy()
+                    model_name=self.model_name, generation_params=gen_kwargs, backend_params=self.backend_params.copy(), backend="openai"
                 )
         return messages
 
