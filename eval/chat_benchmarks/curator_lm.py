@@ -43,12 +43,6 @@ class CuratorAPIModel(TemplateLM):
             }
         )
 
-        if "curator_url" in kwargs:
-            self.backend_params["base_url"] = kwargs["curator_url"]
-
-        if "curator_api_key" in kwargs:
-            self.backend_params["api_key"] = str(kwargs["curator_api_key"])
-
         if tokenized_requests:
             raise NotImplementedError("Tokenized requests not implemented for curator.")
         self.tokenized_requests = False
@@ -68,6 +62,13 @@ class CuratorAPIModel(TemplateLM):
             "request_timeout": timeout,
             "max_retries": max_retries,
         }
+
+        if "curator_url" in kwargs:
+            self.backend_params["base_url"] = kwargs["curator_url"]
+
+        if "curator_api_key" in kwargs:
+            self.backend_params["api_key"] = str(kwargs["curator_api_key"])
+
         self.backend_params["max_requests_per_minute"] = max_requests_per_minute or 50
         self.backend_params["max_tokens_per_minute"] = max_tokens_per_minute or 100000
         self.backend_params["seconds_to_pause_on_rate_limit"] = seconds_to_pause_on_rate_limit or 10
