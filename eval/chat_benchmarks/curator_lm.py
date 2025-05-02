@@ -63,6 +63,9 @@ class CuratorAPIModel(TemplateLM):
             "max_retries": max_retries,
         }
 
+        if "no_think" in kwargs:
+            self.gen_kwargs["no_think"] = kwargs["no_think"]
+
         if "curator_url" in kwargs:
             self.backend_params["base_url"] = kwargs["curator_url"]
 
@@ -106,7 +109,10 @@ class CuratorAPIModel(TemplateLM):
             self.eos = eos
             self.gen_kwargs = gen_kwargs.copy()
             self.llm = curator.LLM(
-                model_name=self.model_name, generation_params=gen_kwargs, backend_params=self.backend_params.copy(), backend="openai"
+                model_name=self.model_name,
+                generation_params=gen_kwargs,
+                backend_params=self.backend_params.copy(),
+                backend="openai",
             )
         else:
             if self.gen_kwargs != gen_kwargs:
@@ -115,7 +121,10 @@ class CuratorAPIModel(TemplateLM):
                 )
                 self.gen_kwargs = gen_kwargs.copy()
                 self.llm = curator.LLM(
-                    model_name=self.model_name, generation_params=gen_kwargs, backend_params=self.backend_params.copy(), backend="openai"
+                    model_name=self.model_name,
+                    generation_params=gen_kwargs,
+                    backend_params=self.backend_params.copy(),
+                    backend="openai",
                 )
         return messages
 
@@ -124,7 +133,14 @@ class CuratorAPIModel(TemplateLM):
     ) -> Union[List[List[int]], List[dict], List[str], str]:
         # Convert messages to the format expected by the API
         if isinstance(messages, list) and all(isinstance(m, JsonChatStr) for m in messages):
-            return [json.loads(m.prompt) for m in messages]
+            parsed_messages = [json.loads(m.prompt) for m in messages]
+            no_think_tag = self.gen_kwargs.get("no_think", None)
+            if no_think_tag:
+                for message_list in parsed_messages:
+                    for message in message_list:
+                        if message["role"] == "user" and no_think_tag not in message["content"]:
+                            message["content"] = message["content"] + no_think_tag
+            return parsed_messages
         else:
             raise ValueError("Messages must be a list of JsonChatStr objects")
 

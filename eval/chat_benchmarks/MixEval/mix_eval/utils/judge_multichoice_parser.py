@@ -124,9 +124,14 @@ class ChatGPTJudgeCloseendMultichoice:
             option_letters = [chr(ord("A") + i) for i in range(len(options))]
             task["judge_response"] = f"[[{random.choice(option_letters)}]]"
             return task
-        annotation = completion.choices[0].message.content
-        task["judge_response"] = annotation
-        return task
+        try:
+            annotation = completion.choices[0].message.content
+            task["judge_response"] = annotation
+            return task
+        except Exception as e:
+            print(f"Error in completion, the entry {task} will be retried later... {e}")
+            task["judge_response"] = None
+            return task
 
     def annotate_parallel(self, tasks):
         print(f"Parsing in parallel, in total {self.args.api_parallel_num} threads.")
