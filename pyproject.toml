@@ -153,8 +153,6 @@ dependencies = [
     # SWE-bench
     "swebench>=3.0.4",
 
-    # LM Eval
-    "lm-eval[vllm] @ git+https://github.com/EtashGuha/lm-evaluation-harness@etashg/tokenize_fix",
 ]
 
 [project.urls]
