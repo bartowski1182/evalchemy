@@ -61,7 +61,7 @@ class CuratorAPIModel(TemplateLM):
             "require_all_responses": False,
             "request_timeout": timeout,
             "max_retries": max_retries,
-            "max_batch": kwargs.get("max_concurrent_requests", 3),
+            "max_batch": kwargs.get("max_batch", 3),
         }
 
         if "no_think" in kwargs and kwargs["no_think"] != "":
