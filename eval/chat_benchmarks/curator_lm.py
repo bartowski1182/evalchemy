@@ -61,9 +61,11 @@ class CuratorAPIModel(TemplateLM):
             "require_all_responses": False,
             "request_timeout": timeout,
             "max_retries": max_retries,
+            "max_batch": kwargs.get("max_concurrent_requests", 3),
         }
 
-        if "no_think" in kwargs:
+        if "no_think" in kwargs and kwargs["no_think"] != "":
+            print(f"Setting no_think to '{kwargs['no_think']}'")
             self.gen_kwargs["no_think"] = kwargs["no_think"]
 
         if "curator_url" in kwargs:
