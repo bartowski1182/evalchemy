@@ -64,9 +64,10 @@ class CuratorAPIModel(TemplateLM):
             "max_batch": kwargs.get("max_batch", 3),
         }
 
+        self.no_think = None
         if "no_think" in kwargs and kwargs["no_think"] != "":
             print(f"Setting no_think to '{kwargs['no_think']}'")
-            self.gen_kwargs["no_think"] = kwargs["no_think"]
+            self.no_think = kwargs["no_think"]
 
         if "curator_url" in kwargs:
             self.backend_params["base_url"] = kwargs["curator_url"]
@@ -136,12 +137,11 @@ class CuratorAPIModel(TemplateLM):
         # Convert messages to the format expected by the API
         if isinstance(messages, list) and all(isinstance(m, JsonChatStr) for m in messages):
             parsed_messages = [json.loads(m.prompt) for m in messages]
-            no_think_tag = self.gen_kwargs.get("no_think", None)
-            if no_think_tag:
+            if self.no_think:
                 for message_list in parsed_messages:
                     for message in message_list:
-                        if message["role"] == "user" and no_think_tag not in message["content"]:
-                            message["content"] = message["content"] + no_think_tag
+                        if message["role"] == "user" and self.no_think not in message["content"]:
+                            message["content"] = message["content"] + self.no_think
             return parsed_messages
         else:
             raise ValueError("Messages must be a list of JsonChatStr objects")
