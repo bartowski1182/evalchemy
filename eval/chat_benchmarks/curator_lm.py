@@ -79,6 +79,10 @@ class CuratorAPIModel(TemplateLM):
         self.backend_params["max_tokens_per_minute"] = max_tokens_per_minute or 100000
         self.backend_params["seconds_to_pause_on_rate_limit"] = seconds_to_pause_on_rate_limit or 10
 
+        # Optional: allow explicit max_concurrent_requests to be set
+        if "max_concurrent_requests" in kwargs and kwargs["max_concurrent_requests"] is not None:
+            self.backend_params["max_concurrent_requests"] = kwargs["max_concurrent_requests"]
+
         # Disable cache since it is not necessary
         os.environ["CURATOR_DISABLE_CACHE"] = "true"
 
