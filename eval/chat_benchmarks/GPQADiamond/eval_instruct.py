@@ -135,14 +135,25 @@ class GPQADiamondBenchmark(BaseBenchmark):
         # Calculate accuracy for each repetition
         all_results = []
         for i in range(self.n_repeat):
-            solved = sum([example["answer"] == example["model_answers"][i] for example in examples])
+            # Skip examples that failed to generate responses
+            valid_examples = [
+                example for example in examples if "model_answers" in example and len(example["model_answers"]) > i
+            ]
+
+            if valid_examples:
+                solved = sum([example["answer"] == example["model_answers"][i] for example in valid_examples])
+                num_valid = len(valid_examples)
+            else:
+                solved = 0
+                num_valid = 0
 
             all_results.append(
                 {
                     "repetition": i + 1,
                     "num_total": num_questions,
+                    "num_valid": num_valid,
                     "num_solved": solved,
-                    "accuracy": solved / num_questions,
+                    "accuracy": solved / num_valid if num_valid > 0 else 0.0,
                 }
             )
 
@@ -152,9 +163,13 @@ class GPQADiamondBenchmark(BaseBenchmark):
         accuracy_std = np.std([result["accuracy"] for result in all_results])
         accuracy_std_err = np.std([result["accuracy"] for result in all_results]) / np.sqrt(self.n_repeat)
 
+        # Calculate number of failed examples
+        num_failed = num_questions - min([result["num_valid"] for result in all_results])
+
         results.update(
             {
                 "num_total": num_questions,
+                "num_failed": num_failed,
                 "solved_avg": solved_avg,
                 "run_stats": all_results,
                 "accuracy_avg": accuracy_avg,
@@ -162,6 +177,9 @@ class GPQADiamondBenchmark(BaseBenchmark):
                 "num_repeat": self.n_repeat,
             }
         )
+
+        if num_failed > 0:
+            self.logger.warning(f"Skipped {num_failed} failed examples out of {num_questions} total")
 
         return results
 
