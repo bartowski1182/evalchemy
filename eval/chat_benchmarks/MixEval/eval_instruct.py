@@ -194,7 +194,10 @@ class MixEvalBenchmark(BaseBenchmark):
         all_responses = self.compute(model, all_instances)
 
         for idx in list(range(len(eval_dataset.raw_inputs))):
-            eval_dataset.raw_inputs[idx]["response"] = all_responses[idx]
+            if idx < len(all_responses) and all_responses[idx] is not None:
+                eval_dataset.raw_inputs[idx]["response"] = all_responses[idx]
+            else:
+                eval_dataset.raw_inputs[idx]["response"] = ""
 
         if model.rank == 0:
             with open(response_file, "w") as f:
