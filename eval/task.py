@@ -97,15 +97,26 @@ class BaseBenchmark(ABC):
 
             dist.all_gather_object(all_results, results)
 
-            # Merge results from all ranks
-            length = sum(len(res) for res in all_results if res is not None)
-            merged = [None] * length
+            # Merge results from all ranks preserving original positions.
+            # Always return a list with the same length as the full input set.
+            expected_len = len(inputs)
+            merged = [None] * expected_len
             for rank, sub_results in enumerate(all_results):
                 if sub_results is not None:
                     for i, item in enumerate(sub_results):
-                        merged[i * model.world_size + rank] = item
+                        global_idx = i * model.world_size + rank
+                        if 0 <= global_idx < expected_len:
+                            merged[global_idx] = item
             return merged
         else:
+            # Guard against buggy backends that return fewer outputs than inputs
+            if len(results) != len(prompts):
+                padded = list(results)
+                if len(results) < len(prompts):
+                    padded.extend([None] * (len(prompts) - len(results)))
+                else:
+                    padded = padded[: len(prompts)]
+                return padded
             return results
 
     @abstractmethod

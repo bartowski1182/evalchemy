@@ -193,8 +193,10 @@ class MixEvalBenchmark(BaseBenchmark):
             )
         all_responses = self.compute(model, all_instances)
 
-        for idx in list(range(len(eval_dataset.raw_inputs))):
-            if idx < len(all_responses) and all_responses[idx] is not None:
+        # compute() now guarantees all_responses has same length as inputs,
+        # with None for failed responses
+        for idx in range(len(eval_dataset.raw_inputs)):
+            if all_responses[idx] is not None:
                 eval_dataset.raw_inputs[idx]["response"] = all_responses[idx]
             else:
                 eval_dataset.raw_inputs[idx]["response"] = ""
